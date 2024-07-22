@@ -1,4 +1,4 @@
-from flask import Flask, Response, jsonify,request
+from flask import Flask, Response, jsonify,request, send_file
 from formater import formatExcel
 from flask_cors import CORS
 # Crear una nueva aplicación flask
@@ -16,10 +16,7 @@ def format():
         "Access-Control-Allow-Headers": "*",
         "Access-Control-Allow-Methods": "GET",
     }
-    return Response(
-        response=content,
-        headers=headers,
-    )
+    return send_file(content,download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheet.sheet")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

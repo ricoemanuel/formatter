@@ -24,4 +24,6 @@ def formatExcel(contentBytes):
     output.seek(0)
 
 
-    return output.read()
+
+
+    return output
