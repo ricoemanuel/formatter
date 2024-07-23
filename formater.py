@@ -10,7 +10,7 @@ def formatExcel(contentBytes):
     
     df_zero=df[df['Live Check Amount'] == 0]
     df_zero=df_zero.groupby('Client').agg(
-        number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc='count'),
+        number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc='sum'),
         check_totals=pd.NamedAgg(column='Live Check Amount', aggfunc='sum')
     ).reset_index()
 
@@ -22,8 +22,8 @@ def formatExcel(contentBytes):
 
     df_concat = pd.concat([df_zero, grouped_data])
 
-    grouped_data=df_concat.drop_duplicates(subset='Client', keep='last', inplace=True)
-
+    grouped_data=df_concat.drop_duplicates(subset='Client', keep='last', inplace=False)
+    print(df_concat)
     grouped_data.loc[len(grouped_data)]={
         'Client': 'Totals',
         'number_of_live_checks': grouped_data['number_of_live_checks'].sum(),
