@@ -47,6 +47,9 @@ def formatExcel(contentBytes):
     for cell in ws[1]:
         cell.fill = blue_fill
 
+    for cell in ws[len(ws)-1]:
+        cell.fill = blue_fill
+
     # Save the workbook to the output
     wb.save(output)
     output.seek(0)
