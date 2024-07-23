@@ -63,7 +63,10 @@ def formatExcel(contentBytes):
     for cell in ws['C']:
         cell.number_format = numbers.FORMAT_CURRENCY_USD_SIMPLE
 
-    for cell in ws[len(ws.rows)]:
+    last_row = ws[len(ws['A'])]
+
+    # Apply the same fill color to the last row as the headers
+    for cell in last_row:
         cell.fill = blue_fill
 
     wb.save(output)
