@@ -1,6 +1,9 @@
 import pandas as pd
 from io import BytesIO
 import base64
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles import Font, Color
 
 def formatExcel(contentBytes):
     decoded = base64.b64decode(contentBytes)
@@ -32,9 +35,18 @@ def formatExcel(contentBytes):
     
 
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        grouped_data.to_excel(writer, index=False)
-    
+    wb = Workbook()
+    ws = wb.active
+     # Convert the DataFrame to rows and add them to the worksheet
+    for r in dataframe_to_rows(grouped_data, index=False, header=True):
+        ws.append(r)
+
+    # Make the header cells blue
+    for cell in ws[1]:
+        cell.font = Font(color="0000FF")
+
+    # Save the workbook to the output
+    wb.save(output)
     output.seek(0)
 
     return output
