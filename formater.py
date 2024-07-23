@@ -3,7 +3,7 @@ from io import BytesIO
 import base64
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.styles import Font, Color
+from openpyxl.styles import PatternFill
 
 def formatExcel(contentBytes):
     decoded = base64.b64decode(contentBytes)
@@ -41,9 +41,11 @@ def formatExcel(contentBytes):
     for r in dataframe_to_rows(grouped_data, index=False, header=True):
         ws.append(r)
 
-    # Make the header cells blue
+    blue_fill = PatternFill(start_color="94DCF8",
+                            end_color="94DCF8",
+                            fill_type="solid")
     for cell in ws[1]:
-        cell.font = Font(color="0000FF")
+        cell.fill = blue_fill
 
     # Save the workbook to the output
     wb.save(output)
