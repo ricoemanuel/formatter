@@ -17,7 +17,7 @@ def formatExcel(contentBytes):
         'number_of_live_checks': [grouped_data['number_of_live_checks'].sum()],
         'check_totals': [grouped_data['check_totals'].sum()]
     })
-    grouped_data = grouped_data.add(sum_row)
+    grouped_data.add(sum_row)
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
