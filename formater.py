@@ -14,9 +14,9 @@ def formatExcel(contentBytes):
     ).reset_index()
 
     grouped_data.loc[len(grouped_data)]={
-        'Client': ['Totals'],
-        'number_of_live_checks': [grouped_data['number_of_live_checks'].sum()],
-        'check_totals': [grouped_data['check_totals'].sum()]
+        'Client': 'Totals',
+        'number_of_live_checks': grouped_data['number_of_live_checks'].sum(),
+        'check_totals': grouped_data['check_totals'].sum()
     }
 
     output = BytesIO()
