@@ -23,7 +23,7 @@ def formatExcel(contentBytes):
     df_concat = pd.concat([df_zero, grouped_data])
 
     grouped_data=df_concat.drop_duplicates(subset='Client', keep='last', inplace=False)
-    print(df_concat)
+    grouped_data = grouped_data.sort_values('Client', ascending=False)
     grouped_data.loc[len(grouped_data)]={
         'Client': 'Totals',
         'number_of_live_checks': grouped_data['number_of_live_checks'].sum(),
