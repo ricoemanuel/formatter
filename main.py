@@ -10,12 +10,7 @@ def format():
     contentBytes = request.get_data()
 
     content=formatExcel(contentBytes)
-    headers = {
-        "Content-Disposition": "attachment; filename='myfile.xlsx'",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*",
-        "Access-Control-Allow-Methods": "GET",
-    }
+    
     return send_file(content,download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheet.sheet")
 
 if __name__ == '__main__':
