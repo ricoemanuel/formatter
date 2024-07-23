@@ -12,11 +12,6 @@ def formatExcel(contentBytes):
     
     df = pd.read_excel(excel, skiprows=5, skipfooter=4, engine='openpyxl')
     
-    # df_zero=df[df['Live Check Amount'] == 0]
-    # df_zero=df_zero.groupby('Client').agg(
-    #     number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc='sum'),
-    #     check_totals=pd.NamedAgg(column='Live Check Amount', aggfunc='sum')
-    # ).reset_index()
 
     df = df[df['Live Check Amount'] > 0]
     grouped_data = df.groupby('Client').agg(
@@ -24,10 +19,6 @@ def formatExcel(contentBytes):
         check_totals=pd.NamedAgg(column='Live Check Amount', aggfunc='sum')
     ).reset_index()
 
-    # df_concat = pd.concat([df_zero, grouped_data])
-
-    # grouped_data=df_concat.drop_duplicates(subset='Client', keep='last', inplace=False)
-    # grouped_data = grouped_data.sort_values('Client', ascending=True)
     grouped_data.loc[len(grouped_data)]={
         'Client': 'Totals',
         'number_of_live_checks': grouped_data['number_of_live_checks'].sum(),
@@ -38,7 +29,7 @@ def formatExcel(contentBytes):
     output = BytesIO()
     wb = Workbook()
     ws = wb.active
-     # Convert the DataFrame to rows and add them to the worksheet
+    
     for r in dataframe_to_rows(grouped_data, index=False, header=True):
         ws.append(r)
 
@@ -65,7 +56,6 @@ def formatExcel(contentBytes):
 
     last_row = ws[len(ws['A'])]
 
-    # Apply the same fill color to the last row as the headers
     for cell in last_row:
         cell.fill = blue_fill
 
