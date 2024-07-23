@@ -7,9 +7,9 @@ def formatExcel(contentBytes):
     excel = BytesIO(decoded)
     
     df = pd.read_excel(excel, skiprows=5, skipfooter=4, engine='openpyxl')
-    df['countable_checks'] = df['Live Check Amount'].apply(lambda x: 1 if x > 0 else 0)
+    df = df[df['Live Check Amount'] > 0]
     grouped_data = df.groupby('Client').agg(
-        number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc='sum'),
+        number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc='count'),
         check_totals=pd.NamedAgg(column='Live Check Amount', aggfunc='sum')
     ).reset_index()
 
