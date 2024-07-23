@@ -13,11 +13,11 @@ def formatExcel(contentBytes):
         check_totals=pd.NamedAgg(column='Live Check Amount', aggfunc='sum')
     ).reset_index()
 
-    grouped_data.append({
-        'Client': ['Totals:'],
+    grouped_data.loc[len(grouped_data)]={
+        'Client': ['Totals'],
         'number_of_live_checks': [grouped_data['number_of_live_checks'].sum()],
         'check_totals': [grouped_data['check_totals'].sum()]
-    })
+    }
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
