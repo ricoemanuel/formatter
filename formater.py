@@ -4,6 +4,7 @@ import base64
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import PatternFill
+from openpyxl.styles import numbers
 
 def formatExcel(contentBytes):
     decoded = base64.b64decode(contentBytes)
@@ -59,7 +60,12 @@ def formatExcel(contentBytes):
         adjusted_width = (max_length + 2)
         ws.column_dimensions[column[0].column_letter].width = adjusted_width
 
-    # Save the workbook to the output
+    for cell in ws['C']:
+        cell.number_format = numbers.FORMAT_CURRENCY_USD_SIMPLE
+
+    for cell in ws[len(ws.rows)]:
+        cell.fill = blue_fill
+
     wb.save(output)
     output.seek(0)
 
