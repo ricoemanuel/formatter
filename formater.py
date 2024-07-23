@@ -8,12 +8,21 @@ def formatExcel(contentBytes):
     
     df = pd.read_excel(excel, skiprows=5, skipfooter=4, engine='openpyxl')
     
-    df_zero = pd.DataFrame(columns=df.columns)
-  
-    grouped_data = df.groupby('Client').agg(
-        number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc=count_non_zero),
+    df_zero=df[df['Live Check Amount'] == 0]
+    df_zero=df_zero.groupby('Client').agg(
+        number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc='count'),
         check_totals=pd.NamedAgg(column='Live Check Amount', aggfunc='sum')
     ).reset_index()
+
+    df = df[df['Live Check Amount'] > 0]
+    grouped_data = df.groupby('Client').agg(
+        number_of_live_checks=pd.NamedAgg(column='Live Check Amount', aggfunc='count'),
+        check_totals=pd.NamedAgg(column='Live Check Amount', aggfunc='sum')
+    ).reset_index()
+
+    df_concat = pd.concat([df_zero, grouped_data])
+
+    grouped_data=df_concat.drop_duplicates(subset='Client', keep='last', inplace=True)
 
     grouped_data.loc[len(grouped_data)]={
         'Client': 'Totals',
@@ -28,7 +37,4 @@ def formatExcel(contentBytes):
     
     output.seek(0)
 
-    return output, df_zero
-
-def count_non_zero(series):
-    return (series != 0).sum()
+    return output
