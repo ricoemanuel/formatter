@@ -4,6 +4,7 @@ import base64
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import PatternFill, numbers
+import numpy as np
 
 def decode_content(contentBytes):
     decoded = base64.b64decode(contentBytes)
@@ -68,6 +69,11 @@ def formatExcel(contentBytes):
 
 def formatFromJson(content):
     df= pd.DataFrame(content)
+    df['Live Check Amount'] = df['Live Check Amount'].replace('', np.nan)
+
+    df['Live Check Amount'] = df['Live Check Amount'].fillna(0)
+
+    df['Live Check Amount'] = df['Live Check Amount'].astype(float)
     grouped_data = filter_and_group_data(df)
     grouped_data = add_totals_row(grouped_data)
     return grouped_data.to_dict(orient='records')

@@ -16,7 +16,8 @@ def format():
 @app.route('/format-json', methods=['POST'])
 def format_json():
     data = request.get_json()
-    return formatFromJson(data)
+    response = formatFromJson(data)
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
