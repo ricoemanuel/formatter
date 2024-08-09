@@ -87,7 +87,7 @@ def createFile():
     quarter = (date.month-1)//3 + 1
 
     output_directory = fr"{date.year}\Q{quarter}"
-    output_file = fr"{output_directory}\SNIC Monthly Payroll_{date.strftime('%B')} {date.year}.xlsx"
+    output_file = fr"SNIC Monthly Payroll_{date.strftime('%B')} {date.year}.xlsx"
 
 
-    return {"path":output_file}
+    return {"file_name":output_file,"path":output_directory}
