@@ -5,6 +5,9 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import PatternFill, numbers
 import numpy as np
+import pandas as pd
+from datetime import datetime
+from io import StringIO
 
 def decode_content(contentBytes):
     decoded = base64.b64decode(contentBytes)
@@ -77,3 +80,14 @@ def formatFromJson(content):
     grouped_data = filter_and_group_data(df)
     grouped_data = add_totals_row(grouped_data)
     return grouped_data.to_dict(orient='records')
+
+def createFile():
+
+    date = datetime.now()
+    quarter = (date.month-1)//3 + 1
+
+    output_directory = fr"{date.year}\Q{quarter}"
+    output_file = fr"{output_directory}\SNIC Monthly Payroll_{date.strftime('%B')} {date.year}.xlsx"
+
+
+    return {"path":output_file}

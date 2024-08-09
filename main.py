@@ -1,5 +1,5 @@
 from flask import Flask, Response, jsonify,request, send_file
-from formater import formatExcel, formatFromJson
+from formater import formatExcel, formatFromJson, createFile
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -17,6 +17,11 @@ def format():
 def format_json():
     data = request.get_json()
     response = formatFromJson(data)
+    return response
+
+@app.route('/create_file', methods=['GET'])
+def create_file():
+    response = createFile()
     return response
 
 if __name__ == '__main__':
