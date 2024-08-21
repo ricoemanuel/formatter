@@ -89,7 +89,17 @@ def formatFromJson(content):
 
 
 def discrepancies_report(contentBytes):
+    # Decodificar el contenido y convertirlo en un DataFrame
     df = decode_content_2(contentBytes)
-    wb = format_worksheet(df)
+    
+    # Filtrar las columnas que contienen 'ssn' (insensible a mayúsculas/minúsculas)
+    ssn_column = [col for col in df.columns if 'ssn' in col.lower()]
+    
+    # Mantener solo la columna que contiene 'ssn'
+    df_ssn = df[ssn_column]
+    
+    # Formatear la hoja de trabajo
+    wb = format_worksheet(df_ssn)
+    
     return save_workbook(wb)
 
