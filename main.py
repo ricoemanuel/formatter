@@ -25,7 +25,7 @@ def discrepancies():
     data = request.get_json()
     
     # Extraer el contenido de $content
-    content = data.get('$content')
+    content = data.get('content')
     
     # Procesar el contenido
     processed_content = discrepancies_report(content)
