@@ -30,7 +30,7 @@ def discrepancies():
     # Procesar el contenido
     processed_content = discrepancies_report(content)
     
-    return ""
+    return send_file(processed_content,download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheet.sheet")
 
 
 
