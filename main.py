@@ -30,7 +30,7 @@ def discrepancies():
     # Procesar el contenido
     processed_content = discrepancies_report(content)
     
-    return 'done'
+    return ""
 
 
 
