@@ -1,3 +1,4 @@
+import base64
 from flask import Flask, Response, jsonify,request, send_file
 from formater import formatExcel, formatFromJson, discrepancies_report
 from flask_cors import CORS
@@ -19,19 +20,20 @@ def format_json():
     response = formatFromJson(data)
     return response
 
+
 @app.route('/discrepancies', methods=['POST'])
 def discrepancies():
     # Obtener el contenido de la solicitud POST
     data = request.get_json()
     
-    # Extraer el contenido de $content
-    content = data.get('contentBytes')
+    # Extraer el contenido de 'content'
+    content = data[0].get('content')
+
     
     # Procesar el contenido
     processed_content = discrepancies_report(content)
     
-    return send_file(processed_content,download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheet.sheet")
-
+    return send_file(processed_content, download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 if __name__ == '__main__':
