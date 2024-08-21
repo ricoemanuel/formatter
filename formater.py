@@ -15,6 +15,12 @@ def decode_content(contentBytes):
     df = pd.read_excel(excel, skiprows=5, skipfooter=4, engine='openpyxl')
     return df
 
+def decode_content_2(contentBytes):
+    decoded = base64.b64decode(contentBytes)
+    excel = BytesIO(decoded)
+    df = pd.read_excel(excel, engine='openpyxl')
+    return df
+
 def filter_and_group_data(df):
     df = df[df['Live Check Amount'] > 0]
     grouped_data = df.groupby('Client').agg(
@@ -81,13 +87,9 @@ def formatFromJson(content):
     grouped_data = add_totals_row(grouped_data)
     return grouped_data.to_dict(orient='records')
 
-def createFile():
 
-    date = datetime.now()
-    quarter = (date.month-1)//3 + 1
+def discrepancies_report(contentBytes):
+    df = decode_content_2(contentBytes)
+    wb = format_worksheet(df)
+    return save_workbook(wb)
 
-    output_directory = fr"{date.year}\Q{quarter}"
-    output_file = fr"SNIC Monthly Payroll_{date.strftime('%B')} {date.year}.xlsx"
-
-
-    return {"file_name":output_file,"path":output_directory}
