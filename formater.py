@@ -94,8 +94,9 @@ def discrepancies_report(contentBytes, path):
     if "aetna" in path.lower():
         dfs=find_tables_in_excel(df)
         for df in dfs:
-            if 'SSN' in df.columns:
-                df['SSN'] = df['SSN'].apply(remove_leading_zero)
+            ssn_columns = [col for col in df.columns if 'ssn' in col.lower()]
+            for ssn_column in ssn_columns:
+                df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
         excel=save_tables_to_excel(dfs)
         return excel
     
