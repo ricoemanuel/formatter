@@ -105,7 +105,7 @@ def discrepancies_report(contentBytes, path):
     return save_workbook(wb)
 
 def remove_leading_zero(ssn):
-    if isinstance(ssn, str) and int(ssn) > 9 and ssn.startswith('0'):
+    if isinstance(ssn, str) and ssn.startswith('0'):
         return ssn[1:]
     return ssn
 
