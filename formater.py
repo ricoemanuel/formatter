@@ -92,7 +92,9 @@ def discrepancies_report(contentBytes, path):
     df = decode_content_2(contentBytes)
 
     if "aetna" in path.lower():
-        df=find_tables_in_excel(df)
+        dfs=find_tables_in_excel(df)
+        excel=save_tables_to_excel(dfs)
+        return excel
     
     wb = format_worksheet(df)
     
@@ -115,4 +117,13 @@ def find_tables_in_excel(df):
             table_start = None
     
     return tables
+
+def save_tables_to_excel(tables):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        for idx, table in enumerate(tables):
+            sheet_name = f"Table_{idx + 1}"
+            table.to_excel(writer, sheet_name=sheet_name, index=False)
+    output.seek(0)
+    return output.getvalue()
 

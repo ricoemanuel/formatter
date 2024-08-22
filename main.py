@@ -1,4 +1,5 @@
 import base64
+from io import BytesIO
 from flask import Flask, Response, jsonify,request, send_file
 from formater import formatExcel, formatFromJson, discrepancies_report
 from flask_cors import CORS
@@ -28,13 +29,15 @@ def discrepancies():
     
     # Extraer el contenido de 'content'
     content = data[0].get('content')
-    path=data[0].get('path')
+    path = data[0].get('path')
     
     # Procesar el contenido
     processed_content = discrepancies_report(content, path)
     
-    return send_file(processed_content, download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
+    # Wrap the bytes in a BytesIO object
+    processed_file = BytesIO(processed_content)
+    
+    return send_file(processed_file, download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
