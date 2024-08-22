@@ -104,9 +104,12 @@ def discrepancies_report(contentBytes, path):
 def find_tables_in_excel(df):
     tables = []
     table_start = None
-    
+
     for i, row in df.iterrows():
-        if any(row.str.contains('CSA', case=False, na=False)) and (any(row.str.contains('Name', case=False, na=False)) or any(row.str.contains('EE Name', case=False, na=False))):
+        # Convertir todas las cadenas a minúsculas para la comparación
+        row_lower = row.str.lower()
+        
+        if any(row_lower.str.contains('csa', na=False)) and (any(row_lower.str.contains('name', na=False)) or any(row_lower.str.contains('ee name', na=False))):
             table_start = i
         
         if table_start is not None and row.isnull().all():
@@ -115,8 +118,9 @@ def find_tables_in_excel(df):
             table = table.drop(0).reset_index(drop=True)
             tables.append(table)
             table_start = None
-    
+
     return tables
+
 
 def save_tables_to_excel(tables):
     output = BytesIO()
