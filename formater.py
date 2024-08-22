@@ -93,10 +93,8 @@ def discrepancies_report(contentBytes, path):
 
     if "aetna" in path.lower():
         dfs=find_tables_in_excel(df)
-        for col in df.columns:
-            col_str = str(col)  # Convertir el nombre de la columna a cadena
-            if 'SSN' in col_str:
-                df[col] = df[col].apply(remove_leading_zero)
+        for df in dfs:
+            df['SSN'] = df['SSN'].apply(remove_leading_zero)
         excel=save_tables_to_excel(dfs)
         return excel
     
@@ -105,8 +103,8 @@ def discrepancies_report(contentBytes, path):
     return save_workbook(wb)
 
 def remove_leading_zero(ssn):
-    if isinstance(ssn, str) and ssn.startswith('0'):
-        return ssn[1:]
+    if int(ssn) > 9:
+        return ssn.lstrip('0')
     return ssn
 
 def find_tables_in_excel(df):
