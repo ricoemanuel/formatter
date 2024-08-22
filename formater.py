@@ -116,15 +116,3 @@ def find_tables_in_excel(df):
     
     return tables
 
-def save_tables_to_excel(tables, output_file):
-    with pd.ExcelWriter(output_file) as writer:
-        for idx, table in enumerate(tables):
-            sheet_name = f"Table_{idx + 1}"
-            table.to_excel(writer, sheet_name=sheet_name, index=False)
-
-# Ejemplo de uso
-file_path = r"C:\Users\e.ricor\Downloads\081424.xlsx"
-tables = find_tables_in_excel(file_path)
-
-save_tables_to_excel(tables, "output_tables.xlsx")
-
