@@ -91,12 +91,31 @@ def discrepancies_report(contentBytes, path):
     df = ExcelDecoder.decode_content(contentBytes)
     if "aetna" in path.lower():
         dfs = find_tables_in_excel(df)
+       
         for df in dfs:
             ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
             for ssn_column in ssn_columns:
                 df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
-        excel = save_tables_to_excel(dfs)
-        return excel
+
+        columns_to_keep = {
+        'EE SSN': 'SSN',
+        'SSN': 'SSN',
+        'Comments': 'Comments',
+        'comments': 'Comments',
+        'Notes': 'Notes',
+        'notes': 'Notes'
+        }
+        combined_df = pd.DataFrame()
+        
+        for df in dfs:
+            filtered_df = df[[col for col in df.columns if col in columns_to_keep]].rename(columns=columns_to_keep)
+            if 'EE SSN' in filtered_df.columns and 'SSN' in filtered_df.columns:
+                filtered_df['SSN'] = filtered_df['EE SSN'].combine_first(filtered_df['SSN'])
+                filtered_df = filtered_df.drop(columns=['EE SSN'])
+            combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
+        print(combined_df)
+        return save_tables_to_excel([combined_df])
+
     wb = ExcelFormatter.format_worksheet(df)
     return ExcelSaver.save_workbook(wb)
 
