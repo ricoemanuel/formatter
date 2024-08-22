@@ -28,10 +28,10 @@ def discrepancies():
     
     # Extraer el contenido de 'content'
     content = data[0].get('content')
-
+    path=data[0].get('path')
     
     # Procesar el contenido
-    processed_content = discrepancies_report(content)
+    processed_content = discrepancies_report(content, path)
     
     return send_file(processed_content, download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 

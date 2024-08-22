@@ -88,18 +88,43 @@ def formatFromJson(content):
     return grouped_data.to_dict(orient='records')
 
 
-def discrepancies_report(contentBytes):
-    # Decodificar el contenido y convertirlo en un DataFrame
+def discrepancies_report(contentBytes, path):
     df = decode_content_2(contentBytes)
+
+    if "aetna" in path.lower():
+        df=find_tables_in_excel(df)
     
-    # Filtrar las columnas que contienen 'ssn' (insensible a mayúsculas/minúsculas)
-    ssn_column = [col for col in df.columns if 'ssn' in col.lower()]
-    
-    # Mantener solo la columna que contiene 'ssn'
-    df_ssn = df[ssn_column]
-    
-    # Formatear la hoja de trabajo
-    wb = format_worksheet(df_ssn)
+    wb = format_worksheet(df)
     
     return save_workbook(wb)
+
+
+def find_tables_in_excel(df):
+    tables = []
+    table_start = None
+    
+    for i, row in df.iterrows():
+        if any(row.str.contains('CSA', case=False, na=False)) and (any(row.str.contains('Name', case=False, na=False)) or any(row.str.contains('EE Name', case=False, na=False))):
+            table_start = i
+        
+        if table_start is not None and row.isnull().all():
+            table = df.iloc[table_start:i].reset_index(drop=True)
+            table.columns = table.iloc[0]
+            table = table.drop(0).reset_index(drop=True)
+            tables.append(table)
+            table_start = None
+    
+    return tables
+
+def save_tables_to_excel(tables, output_file):
+    with pd.ExcelWriter(output_file) as writer:
+        for idx, table in enumerate(tables):
+            sheet_name = f"Table_{idx + 1}"
+            table.to_excel(writer, sheet_name=sheet_name, index=False)
+
+# Ejemplo de uso
+file_path = r"C:\Users\e.ricor\Downloads\081424.xlsx"
+tables = find_tables_in_excel(file_path)
+
+save_tables_to_excel(tables, "output_tables.xlsx")
 
