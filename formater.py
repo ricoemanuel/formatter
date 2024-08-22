@@ -112,8 +112,8 @@ def discrepancies_report(contentBytes, path):
             if 'EE SSN' in filtered_df.columns and 'SSN' in filtered_df.columns:
                 filtered_df['SSN'] = filtered_df['EE SSN'].combine_first(filtered_df['SSN'])
                 filtered_df = filtered_df.drop(columns=['EE SSN'])
-                filtered_df['Carrier'] = 'aetna'
-                filtered_df['PEO_ID'] = ''
+            filtered_df['Carrier'] = 'aetna'
+            filtered_df['PEO_ID'] = ''
             combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
         print(combined_df)
         return save_tables_to_excel([combined_df])
