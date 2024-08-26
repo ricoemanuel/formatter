@@ -6,6 +6,14 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import PatternFill, numbers
 import numpy as np
+import warnings
+
+def custom_warning_handler(message, category, filename, lineno, file=None, line=None):
+    if "Cannot parse header or footer" in str(message):
+        return
+    warnings.showwarning(message, category, filename, lineno, file, line)
+
+warnings.showwarning = custom_warning_handler
 
 class ExcelDecoder:
     @staticmethod
@@ -215,9 +223,7 @@ def find_requirement_aetna(df):
 def find_requirement_legalShield(df):
     download_url = f'https://drive.usercontent.google.com/download?id=1hUObzMPVaTxvv6VIjQGjtAvP4PS2Co1i&confirm=t'
     carrierPlanDetails = pd.read_excel(download_url)
-    carrierTermDates = pd.read_excel('https://drive.google.com/uc?id=1LF1Jud__IPMqmdv-NhaX7swnE1P2g9LB')    
-    print(carrierPlanDetails)
-    print(carrierTermDates)
+    carrierTermDates = pd.read_excel('https://drive.google.com/uc?id=1LF1Jud__IPMqmdv-NhaX7swnE1P2g9LB')
     for index, item in df.iterrows():
         item_ssn = str(item["FULL SSN"])
         carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
