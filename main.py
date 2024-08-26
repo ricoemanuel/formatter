@@ -30,8 +30,8 @@ def discrepancies():
     # Extraer el contenido de 'content'
     content = data[0].get('content')
     path = data[0].get('path')
-    
-    # Procesar el contenido
+    print(content)
+    print(path)
     processed_content = discrepancies_report(content, path)
     
     # Wrap the bytes in a BytesIO object
