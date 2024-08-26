@@ -6,8 +6,6 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import PatternFill, numbers
 import numpy as np
-import datetime
-import requests
 
 class ExcelDecoder:
     @staticmethod
