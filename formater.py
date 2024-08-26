@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 from io import BytesIO
 import base64
@@ -5,6 +6,8 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import PatternFill, numbers
 import numpy as np
+import datetime
+import requests
 
 class ExcelDecoder:
     @staticmethod
@@ -96,14 +99,14 @@ def discrepancies_report(contentBytes, path):
             ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
             for ssn_column in ssn_columns:
                 df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
-
         columns_to_keep = {
         'EE SSN': 'SSN',
         'SSN': 'SSN',
         'Comments': 'Comments',
         'comments': 'Comments',
         'Notes': 'Notes',
-        'notes': 'Notes'
+        'notes': 'Notes',
+        'Dep SSN':'Dep SSN'
         }
         combined_df = pd.DataFrame()
         
@@ -112,14 +115,15 @@ def discrepancies_report(contentBytes, path):
             if 'EE SSN' in filtered_df.columns and 'SSN' in filtered_df.columns:
                 filtered_df['SSN'] = filtered_df['EE SSN'].combine_first(filtered_df['SSN'])
                 filtered_df = filtered_df.drop(columns=['EE SSN'])
-                filtered_df['Carrier'] = 'aetna'
-                filtered_df['PEO_ID'] = ''
+            filtered_df['Carrier'] = 'aetna'
+            filtered_df['PEO_ID'] = ''
             combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
-        print(combined_df)
+        combined_df=find_requirement_aetna(combined_df)
         return save_tables_to_excel([combined_df])
 
-    wb = ExcelFormatter.format_worksheet(df)
-    return ExcelSaver.save_workbook(wb)
+    elif "legal shield" in path.lower():
+        df=find_requirement_legalShield(df)
+        return save_tables_to_excel([df])
 
 def remove_leading_zero(ssn):
     if pd.notna(ssn):
@@ -150,3 +154,96 @@ def save_tables_to_excel(tables):
             table.to_excel(writer, sheet_name=sheet_name, index=False)
     output.seek(0)
     return output.getvalue()
+
+def find_requirement_aetna(df):
+    carrierPlanDetails = pd.read_csv("CarrierPlanDetail.csv")
+    discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
+    carrierTermDates = pd.read_excel("CarrierTermDates.xlsx")
+    
+    df['Found Data'] = ''
+    
+    for index, item in df.iterrows():
+        
+        comment = item['Comments']
+        found_keywords = []
+        for _, keyword_row in discrepancies.iterrows():
+            keyword = str(keyword_row['Key word'])
+            if keyword.lower() in comment.lower():
+                found_keywords.append(keyword_row.to_dict())
+        found_keywords = {item['Data Base']: item for item in found_keywords}.values()
+        found_keywords = list(found_keywords)
+        
+        if len(found_keywords) > 0:
+            key_word = found_keywords[0]
+            
+            item_ssn = str(item["SSN"])
+            if pd.notna(key_word["Data Base"]):
+                df.at[index, 'key word'] = key_word["Data Base"]
+                if key_word["Data Base"] != "TERMDATE":
+                    carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
+                    resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
+                    if not resultado.empty:
+                        dep_ssn = str(item["Dep SSN"])
+                        resultadodep = resultado[resultado['DEP_SSN'] == dep_ssn]
+                        if not resultadodep.empty:
+                            datos = resultadodep[key_word["Data Base"]].values
+                            datos = list(set(resultadodep[key_word["Data Base"]].values))
+                        else:
+                            datos = resultado[key_word["Data Base"]].values 
+                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                        datos_joined = ';'.join(map(str, datos_filtrados))
+                        df.at[index, 'Found Data'] = datos_joined
+                    else:
+                        df.at[index, 'Found Data'] = ''
+                else:
+                    carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
+                    resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
+                    if not resultado.empty:
+                        datos = resultado[key_word["Data Base"]].values 
+                        datos = [f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}" for date in datos]
+                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                        datos_joined = ';'.join(map(str, datos_filtrados))
+                        df.at[index, 'Found Data'] = datos_joined
+                    else:
+                        df.at[index, 'Found Data'] = ''
+            else:
+                df.at[index, 'key word'] = 'Invalid field'
+                df.at[index, 'Found Data'] = ''
+        else:
+            df.at[index, 'Found Data'] = ''
+    
+    return df
+
+def find_requirement_legalShield(df):
+    download_url = f'https://drive.usercontent.google.com/download?id=1hUObzMPVaTxvv6VIjQGjtAvP4PS2Co1i&confirm=t'
+    carrierPlanDetails = pd.read_excel(download_url)
+    carrierTermDates = pd.read_excel('https://drive.google.com/uc?id=1LF1Jud__IPMqmdv-NhaX7swnE1P2g9LB')    
+    print(carrierPlanDetails)
+    print(carrierTermDates)
+    for index, item in df.iterrows():
+        item_ssn = str(item["FULL SSN"])
+        carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
+        carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
+        resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
+        field='COVERAGE_END_DATE'
+        datos=resultado[field].values
+        
+        datos_filtrados = datos_filtrados = list(
+            {dato for dato in datos if '/' not in str(dato) and not (isinstance(dato, float) and math.isnan(dato))} |
+            {dato for dato in datos if '/' in str(dato) and not (isinstance(dato, float) and math.isnan(dato))}
+        )
+        
+        if len(datos_filtrados)==0:
+            field='TERMDATE'
+            resultado=carrierTermDates[carrierTermDates['SSN'] == item_ssn]
+            datos=resultado[field].values
+            datos = [
+                f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}"
+                if isinstance(date, np.datetime64) else date
+                for date in datos if not pd.isna(date)
+            ]
+            datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+        datos_joined = ';'.join(map(str, datos_filtrados))
+        df.at[index, field] = datos_joined
+    
+    return df
