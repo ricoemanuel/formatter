@@ -221,8 +221,8 @@ def find_requirement_aetna(df):
     return df
 
 def find_requirement_legalShield(df):
-    carrierPlanDetails = pd.read_excel("CarrierPlanDetail.xlsx")
-    carrierTermDates = pd.read_excel("CarrierTermDates.xlsx")
+    carrierPlanDetails = pd.read_excel("https://github.com/ricoemanuel/filesp/raw/master/CarrierPlanDetail.xlsx")
+    carrierTermDates = pd.read_excel("https://github.com/ricoemanuel/filesp/raw/master/CarrierTermDates.xlsx")
     for index, item in df.iterrows():
         item_ssn = str(item["FULL SSN"])
         carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
