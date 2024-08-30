@@ -1,7 +1,7 @@
 import base64
 from io import BytesIO
 from flask import Flask, Response, jsonify,request, send_file
-from formater import formatExcel, formatFromJson, discrepancies_report
+from formater import formatExcel, formatFromJson, discrepancies_report, discrepancies_report_ssn
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -37,5 +37,15 @@ def discrepancies():
     
     return send_file(processed_file, download_name='file.xlsx', as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
+@app.route('/list_ssn', methods=['POST'])
+def discrepancies_ssns():
+    # Obtener el contenido de la solicitud POST
+    data = request.get_json()
+    
+    # Extraer el contenido de 'content'
+    content = data[0].get('content')
+    path = data[0].get('path')
+    return discrepancies_report_ssn(content, path)
+    
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
