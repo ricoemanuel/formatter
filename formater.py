@@ -137,7 +137,7 @@ def discrepancies_report_ssn(contentBytes, path):
             ssn_records = [int(ssn) if isinstance(ssn, str) and ssn.isdigit() else ssn for ssn in ssn_records]
         return {"ssn":ssn_records}
     
-def discrepancies_report(contentBytes, path):
+def discrepancies_report(contentBytes, path, planTermDetails, termDates):
     df = ExcelDecoder.decode_content(contentBytes)
     if "aetna" in path.lower():
         dfs = find_tables_in_excel(df)
@@ -165,7 +165,7 @@ def discrepancies_report(contentBytes, path):
             filtered_df['Carrier'] = 'aetna'
             filtered_df['PEO_ID'] = ''
             combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
-        combined_df=find_requirement_aetna(combined_df)
+        combined_df=find_requirement_aetna(combined_df,planTermDetails,termDates)
         return save_tables_to_excel([combined_df])
 
     elif "legal shield" in path.lower():
@@ -202,10 +202,8 @@ def save_tables_to_excel(tables):
     output.seek(0)
     return output.getvalue()
 
-def find_requirement_aetna(df):
-    carrierPlanDetails = pd.read_csv("CarrierPlanDetail.csv")
+def find_requirement_aetna(df,carrierPlanDetails,carrierTermDates):
     discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
-    carrierTermDates = pd.read_excel("CarrierTermDates.xlsx")
     
     df['Found Data'] = ''
     
