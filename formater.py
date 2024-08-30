@@ -127,7 +127,6 @@ def discrepancies_report_ssn(contentBytes, path):
         ssn_col = next((col for col in combined_df.columns if col.lower() in ['ssn', 'full ssn', 'ee ssn']), None)
         if ssn_col:
             ssn_records = combined_df[ssn_col].tolist()
-            ssn_records = [str(record) if isinstance(record, (int, float)) else record for record in ssn_records]
        
         return {"ssn":ssn_records}
 
@@ -135,7 +134,6 @@ def discrepancies_report_ssn(contentBytes, path):
         ssn_col = next((col for col in df.columns if col.lower() in ['ssn', 'full ssn', 'ee ssn']), None)
         if ssn_col:
             ssn_records = df[ssn_col].tolist()
-            ssn_records = [str(record) if isinstance(record, (int, float)) else record for record in ssn_records]
        
         return {"ssn":ssn_records}
     
