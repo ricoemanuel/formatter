@@ -39,7 +39,10 @@ def discrepancies():
 
     columns = data[0]["carrierplandetailsByDep"][0]
     rows = data[0]["carrierplandetailsByDep"][1:]
-
+    for row in rows:
+        excel_serial_date = int(row[-1])
+        date = datetime.datetime(1899, 12, 30) + datetime.timedelta(days=excel_serial_date)
+        row[-1] = date
     dfcarrierplandetailsByDep = pd.DataFrame(rows, columns=columns)
 
     columns = data[0]["termdates"][0]
