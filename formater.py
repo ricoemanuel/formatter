@@ -136,6 +136,9 @@ def discrepancies_report_ssn(contentBytes, path):
             ssn_records = df[ssn_col].tolist()
             ssn_records = [int(ssn) if isinstance(ssn, str) and ssn.isdigit() else ssn for ssn in ssn_records]
         return {"ssn":ssn_records}
+    elif "empire" in path.lower():
+        ssn_col = next((col for col in df.columns if col.lower() in ['ssn', 'full ssn', 'ee ssn']), None)
+
     
 def discrepancies_report(contentBytes, path, planTermDetails, termDates):
     df = ExcelDecoder.decode_content(contentBytes)
@@ -169,7 +172,10 @@ def discrepancies_report(contentBytes, path, planTermDetails, termDates):
         return save_tables_to_excel([combined_df])
 
     elif "legal shield" in path.lower():
-        df=find_requirement_legalShield(df)
+        df=find_requirement_legalShield(df,planTermDetails,termDates)
+        return save_tables_to_excel([df])
+    elif "empire" in path.lower():
+        df=find_requirement_empire(df)
         return save_tables_to_excel([df])
 
 def remove_leading_zero(ssn):
@@ -259,9 +265,8 @@ def find_requirement_aetna(df,carrierPlanDetails,carrierTermDates):
     
     return df
 
-def find_requirement_legalShield(df):
-    carrierPlanDetails = pd.read_excel("https://github.com/ricoemanuel/filesp/raw/master/CarrierPlanDetail.xlsx")
-    carrierTermDates = pd.read_excel("https://github.com/ricoemanuel/filesp/raw/master/CarrierTermDates.xlsx")
+def find_requirement_legalShield(df,carrierPlanDetails,carrierTermDates):
+
     for index, item in df.iterrows():
         item_ssn = str(item["FULL SSN"])
         carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
@@ -289,3 +294,57 @@ def find_requirement_legalShield(df):
         df.at[index, field] = datos_joined
     
     return df
+
+
+def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
+    discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
+    
+    df['Found Data'] = ''
+    
+    for index, item in df.iterrows():
+        
+        comment = item['HOW TO RESOLVE  (ERROR DESCRIPTION)']
+        found_keywords = []
+        for _, keyword_row in discrepancies.iterrows():
+            keyword = str(keyword_row['Key word'])
+            if keyword.lower() in comment.lower():
+                found_keywords.append(keyword_row.to_dict())
+        found_keywords = {item['Data Base']: item for item in found_keywords}.values()
+        found_keywords = list(found_keywords)
+        
+        if len(found_keywords) > 0:
+            key_word = found_keywords[0]
+            
+            item_ssn = str(item["SSN"])
+            if pd.notna(key_word["Data Base"]):
+                df.at[index, 'key word'] = key_word["Data Base"]
+                if key_word["Data Base"] != "TERMDATE":
+                    carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
+                    resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
+                    if not resultado.empty:
+                        datos = resultado[key_word["Data Base"]].values 
+                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                        datos_joined = ';'.join(map(str, datos_filtrados))
+                        df.at[index, 'Found Data'] = datos_joined
+                    else:
+                        df.at[index, 'Found Data'] = ''
+                else:
+                    carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
+                    resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
+                    if not resultado.empty:
+                        datos = resultado[key_word["Data Base"]].values 
+                        datos = [f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}" for date in datos]
+                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                        datos_joined = ';'.join(map(str, datos_filtrados))
+                        df.at[index, 'Found Data'] = datos_joined
+                    else:
+                        df.at[index, 'Found Data'] = ''
+            else:
+                df.at[index, 'key word'] = 'Invalid field'
+                df.at[index, 'Found Data'] = ''
+        else:
+            df.at[index, 'Found Data'] = ''
+    
+    return df
+  
+
