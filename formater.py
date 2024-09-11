@@ -137,8 +137,11 @@ def discrepancies_report_ssn(contentBytes, path):
             ssn_records = [int(ssn) if isinstance(ssn, str) and ssn.isdigit() else ssn for ssn in ssn_records]
         return {"ssn":ssn_records}
     elif "empire" in path.lower():
+        df.columns = [col.strip() for col in df.columns]
         ssn_col = next((col for col in df.columns if col.lower() in ['ssn', 'full ssn', 'ee ssn']), None)
+        
         if ssn_col:
+            print(ssn_col)
             ssn_records = df[ssn_col].tolist()
             ssn_records = [int(ssn) if isinstance(ssn, str) and ssn.isdigit() else ssn for ssn in ssn_records]
         return {"ssn":ssn_records}
