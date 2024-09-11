@@ -305,7 +305,7 @@ def find_requirement_legalShield(df,carrierPlanDetails,carrierTermDates):
 
 def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
     discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
-    
+    df.columns = [col.strip() for col in df.columns]
     df['Found Data'] = ''
     
     for index, item in df.iterrows():
