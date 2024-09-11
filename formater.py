@@ -139,12 +139,11 @@ def discrepancies_report_ssn(contentBytes, path):
     elif "empire" in path.lower():
         df.columns = [col.strip() for col in df.columns]
         ssn_col = next((col for col in df.columns if col.lower() in ['ssn', 'full ssn', 'ee ssn']), None)
-        
+        print(df.columns)
         if ssn_col:
-            print(ssn_col)
             ssn_records = df[ssn_col].tolist()
             ssn_records = [int(ssn) if isinstance(ssn, str) and ssn.isdigit() else ssn for ssn in ssn_records]
-        return {"ssn":ssn_records}
+        return {"ssn":ssn_records,"dep_ssn":ssn_records}
 
     
 def discrepancies_report(contentBytes, path, planTermDetails, termDates):
@@ -321,19 +320,21 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
         
         if len(found_keywords) > 0:
             key_word = found_keywords[0]
-            
             item_ssn = str(item["SSN"])
             if pd.notna(key_word["Data Base"]):
                 df.at[index, 'key word'] = key_word["Data Base"]
                 if key_word["Data Base"] != "TERMDATE":
+                    
                     carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
                     resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
                     if not resultado.empty:
-                        datos = resultado[key_word["Data Base"]].values 
+                        datos = resultado[key_word["Data Base"]].values
                         datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
                     else:
+                        resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
+                        print(item_ssn)
                         df.at[index, 'Found Data'] = ''
                 else:
                     carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
