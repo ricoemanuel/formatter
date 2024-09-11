@@ -182,7 +182,7 @@ def discrepancies_report(contentBytes, path, planTermDetails, termDates):
         df=find_requirement_legalShield(df,planTermDetails,termDates)
         return save_tables_to_excel([df])
     elif "empire" in path.lower():
-        df=find_requirement_empire(df)
+        df=find_requirement_empire(df,planTermDetails,termDates)
         return save_tables_to_excel([df])
 
 def remove_leading_zero(ssn):
