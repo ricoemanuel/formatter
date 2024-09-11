@@ -37,8 +37,17 @@ def discrepancies():
 
     dfcarrierplandetails = pd.DataFrame(rows, columns=columns)
 
+    columns = data[0]["carrierplandetailsByDep"][0]
+    rows = data[0]["carrierplandetailsByDep"][1:]
+
+    dfcarrierplandetailsByDep = pd.DataFrame(rows, columns=columns)
+
     columns = data[0]["termdates"][0]
     rows = data[0]["termdates"][1:]
+
+    df_concatenado = pd.concat([dfcarrierplandetails, dfcarrierplandetailsByDep], ignore_index=True)
+
+
     for row in rows:
         excel_serial_date = int(row[-1])
         date = datetime.datetime(1899, 12, 30) + datetime.timedelta(days=excel_serial_date)
@@ -46,7 +55,7 @@ def discrepancies():
     dftermdates = pd.DataFrame(rows, columns=columns)
 
   
-    processed_content = discrepancies_report(content, path,dfcarrierplandetails,dftermdates)
+    processed_content = discrepancies_report(content, path,df_concatenado,dftermdates)
     
     # Wrap the bytes in a BytesIO object
     processed_file = BytesIO(processed_content)
