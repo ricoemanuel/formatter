@@ -178,9 +178,15 @@ def discrepancies_report(contentBytes, path, planTermDetails, termDates):
         return save_tables_to_excel([combined_df])
 
     elif "legal shield" in path.lower():
+        ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
+        for ssn_column in ssn_columns:
+            df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
         df=find_requirement_legalShield(df,planTermDetails,termDates)
         return save_tables_to_excel([df])
     elif "empire" in path.lower():
+        ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
+        for ssn_column in ssn_columns:
+            df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
         df=find_requirement_empire(df,planTermDetails,termDates)
         return save_tables_to_excel([df])
 
@@ -251,7 +257,7 @@ def find_requirement_aetna(df,carrierPlanDetails,carrierTermDates):
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
                     else:
-                        df.at[index, 'Found Data'] = ''
+                        df.at[index, 'Found Data'] = 'User not found'
                 else:
                     carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
                     resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
@@ -262,11 +268,12 @@ def find_requirement_aetna(df,carrierPlanDetails,carrierTermDates):
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
                     else:
-                        df.at[index, 'Found Data'] = ''
+                        df.at[index, 'Found Data'] = 'User not found'
             else:
                 df.at[index, 'key word'] = 'Invalid field'
                 df.at[index, 'Found Data'] = ''
         else:
+            df.at[index, 'key word'] = 'There is no keywords'
             df.at[index, 'Found Data'] = ''
     
     return df
@@ -278,6 +285,7 @@ def find_requirement_legalShield(df,carrierPlanDetails,carrierTermDates):
         carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
         carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
         resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
+          
         field='COVERAGE_END_DATE'
         datos=resultado[field].values
         
@@ -296,7 +304,9 @@ def find_requirement_legalShield(df,carrierPlanDetails,carrierTermDates):
                 for date in datos if not pd.isna(date)
             ]
             datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-        datos_joined = ';'.join(map(str, datos_filtrados))
+            datos_joined = ';'.join(map(str, datos_filtrados))
+        if resultado.empty:
+            datos_joined="User not found"  
         df.at[index, field] = datos_joined
     
     return df
@@ -340,7 +350,7 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
                             datos_joined = ';'.join(map(str, datos_filtrados))
                             df.at[index, 'Found Data'] = datos_joined
                         else:
-                            df.at[index, 'Found Data'] = ''
+                            df.at[index, 'Found Data'] = 'User not found'
                 else:
                     carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
                     resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
@@ -351,7 +361,7 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
                     else:
-                        df.at[index, 'Found Data'] = ''
+                        df.at[index, 'Found Data'] = 'User not found'
             else:
                 df.at[index, 'key word'] = 'Invalid field'
                 df.at[index, 'Found Data'] = ''
