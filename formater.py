@@ -191,9 +191,14 @@ def discrepancies_report(contentBytes, path, planTermDetails, termDates):
         return save_tables_to_excel([df])
 
 def remove_leading_zero(ssn):
+    original_type = type(ssn)
+    if original_type == int:
+        ssn = str(ssn)
     if pd.notna(ssn):
         if int(ssn) > 9:
-            return ssn.lstrip('0')
+            ssn = ssn.lstrip('0')
+    if original_type == int:
+        ssn = int(ssn)
     return ssn
 
 def find_tables_in_excel(df):
