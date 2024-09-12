@@ -336,9 +336,9 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
         if len(found_keywords) > 0:
             key_word = found_keywords[0]
             item_ssn = str(item["SSN"])
-            if len(item_ssn)==9:
-                if pd.notna(key_word["Data Base"]):
-                    df.at[index, 'key word'] = key_word["Data Base"]
+            if pd.notna(key_word["Data Base"]):
+                df.at[index, 'key word'] = key_word["Data Base"]
+                if len(item_ssn)==9:
                     if key_word["Data Base"] != "TERMDATE":
                         
                         carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
@@ -369,10 +369,10 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
                         else:
                             df.at[index, 'Found Data'] = 'User not found'
                 else:
-                    df.at[index, 'key word'] = 'Invalid field'
-                    df.at[index, 'Found Data'] = ''
+                    df.at[index, 'Found Data'] = 'Invalid SSN' 
             else:
-               df.at[index, 'Found Data'] = 'Invalid SSN number' 
+                df.at[index, 'key word'] = 'Invalid field'
+                df.at[index, 'Found Data'] = ''
         else:
             df.at[index, 'Found Data'] = ''
     
