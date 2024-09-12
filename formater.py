@@ -336,40 +336,43 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
         if len(found_keywords) > 0:
             key_word = found_keywords[0]
             item_ssn = str(item["SSN"])
-            if pd.notna(key_word["Data Base"]):
-                df.at[index, 'key word'] = key_word["Data Base"]
-                if key_word["Data Base"] != "TERMDATE":
-                    
-                    carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
-                    resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
-                    if not resultado.empty:
-                        datos = resultado[key_word["Data Base"]].values
-                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                        datos_joined = ';'.join(map(str, datos_filtrados))
-                        df.at[index, 'Found Data'] = datos_joined
-                    else:
-                        resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
+            if len(item_ssn)==9:
+                if pd.notna(key_word["Data Base"]):
+                    df.at[index, 'key word'] = key_word["Data Base"]
+                    if key_word["Data Base"] != "TERMDATE":
+                        
+                        carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
+                        resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
                         if not resultado.empty:
                             datos = resultado[key_word["Data Base"]].values
                             datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                             datos_joined = ';'.join(map(str, datos_filtrados))
                             df.at[index, 'Found Data'] = datos_joined
                         else:
+                            resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
+                            if not resultado.empty:
+                                datos = resultado[key_word["Data Base"]].values
+                                datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                                datos_joined = ';'.join(map(str, datos_filtrados))
+                                df.at[index, 'Found Data'] = datos_joined
+                            else:
+                                df.at[index, 'Found Data'] = 'User not found'
+                    else:
+                        carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
+                        resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
+                        if not resultado.empty:
+                            datos = resultado[key_word["Data Base"]].values 
+                            datos = [f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}" for date in datos]
+                            datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                            datos_joined = ';'.join(map(str, datos_filtrados))
+                            df.at[index, 'Found Data'] = datos_joined
+                        else:
                             df.at[index, 'Found Data'] = 'User not found'
                 else:
-                    carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
-                    resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
-                    if not resultado.empty:
-                        datos = resultado[key_word["Data Base"]].values 
-                        datos = [f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}" for date in datos]
-                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                        datos_joined = ';'.join(map(str, datos_filtrados))
-                        df.at[index, 'Found Data'] = datos_joined
-                    else:
-                        df.at[index, 'Found Data'] = 'User not found'
+                    df.at[index, 'key word'] = 'Invalid field'
+                    df.at[index, 'Found Data'] = ''
             else:
-                df.at[index, 'key word'] = 'Invalid field'
-                df.at[index, 'Found Data'] = ''
+               df.at[index, 'Found Data'] = 'Invalid SSN number' 
         else:
             df.at[index, 'Found Data'] = ''
     
