@@ -139,14 +139,14 @@ def discrepancies_report_ssn(contentBytes, path):
     elif "empire" in path.lower():
         df.columns = [col.strip() for col in df.columns]
         ssn_col = next((col for col in df.columns if col.lower() in ['ssn', 'full ssn', 'ee ssn']), None)
-        print(df.columns)
         if ssn_col:
             ssn_records = df[ssn_col].tolist()
             ssn_records = [int(ssn) if isinstance(ssn, str) and ssn.isdigit() else ssn for ssn in ssn_records]
         return {"ssn":ssn_records,"dep_ssn":ssn_records}
 
     
-def discrepancies_report(contentBytes, path, planTermDetails, termDates):
+def discrepancies_report(contentBytes, path, planTermDetails):
+    
     df = ExcelDecoder.decode_content(contentBytes)
     if "aetna" in path.lower():
         dfs = find_tables_in_excel(df)
@@ -174,20 +174,20 @@ def discrepancies_report(contentBytes, path, planTermDetails, termDates):
             filtered_df['Carrier'] = 'aetna'
             filtered_df['PEO_ID'] = ''
             combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
-        combined_df=find_requirement_aetna(combined_df,planTermDetails,termDates)
+        combined_df=find_requirement_aetna(combined_df,planTermDetails)
         return save_tables_to_excel([combined_df])
 
     elif "legal shield" in path.lower():
-        ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
+        ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ee ssn' in col.lower()]
         for ssn_column in ssn_columns:
             df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
-        df=find_requirement_legalShield(df,planTermDetails,termDates)
+        df=find_requirement_legalShield(df,planTermDetails)
         return save_tables_to_excel([df])
     elif "empire" in path.lower():
         ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
         for ssn_column in ssn_columns:
             df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
-        df=find_requirement_empire(df,planTermDetails,termDates)
+        df=find_requirement_empire(df,planTermDetails)
         return save_tables_to_excel([df])
 
 def remove_leading_zero(ssn):
@@ -225,7 +225,7 @@ def save_tables_to_excel(tables):
     output.seek(0)
     return output.getvalue()
 
-def find_requirement_aetna(df,carrierPlanDetails,carrierTermDates):
+def find_requirement_aetna(df,carrierPlanDetails):
     discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
     
     df['Found Data'] = ''
@@ -247,33 +247,22 @@ def find_requirement_aetna(df,carrierPlanDetails,carrierTermDates):
             item_ssn = str(item["SSN"])
             if pd.notna(key_word["Data Base"]):
                 df.at[index, 'key word'] = key_word["Data Base"]
-                if key_word["Data Base"] != "TERMDATE":
-                    carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
-                    resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
-                    if not resultado.empty:
-                        dep_ssn = str(item["Dep SSN"])
-                        resultadodep = resultado[resultado['DEP_SSN'] == dep_ssn]
-                        if not resultadodep.empty:
-                            datos = resultadodep[key_word["Data Base"]].values
-                            datos = list(set(resultadodep[key_word["Data Base"]].values))
-                        else:
-                            datos = resultado[key_word["Data Base"]].values 
-                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                        datos_joined = ';'.join(map(str, datos_filtrados))
-                        df.at[index, 'Found Data'] = datos_joined
+                carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
+                resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
+                if not resultado.empty:
+                    dep_ssn = str(item["Dep SSN"])
+                    resultadodep = resultado[resultado['DEP_SSN'] == dep_ssn]
+                    if not resultadodep.empty:
+                        datos = resultadodep[key_word["Data Base"]].values
+                        datos = list(set(resultadodep[key_word["Data Base"]].values))
                     else:
-                        df.at[index, 'Found Data'] = 'User not found'
-                else:
-                    carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
-                    resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
-                    if not resultado.empty:
                         datos = resultado[key_word["Data Base"]].values 
-                        datos = [f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}" for date in datos]
-                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                        datos_joined = ';'.join(map(str, datos_filtrados))
-                        df.at[index, 'Found Data'] = datos_joined
-                    else:
-                        df.at[index, 'Found Data'] = 'User not found'
+                    datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                    datos_joined = ';'.join(map(str, datos_filtrados))
+                    df.at[index, 'Found Data'] = datos_joined
+                else:
+                    df.at[index, 'Found Data'] = 'User not found'
+                
             else:
                 df.at[index, 'key word'] = 'Invalid field'
                 df.at[index, 'Found Data'] = ''
@@ -283,13 +272,11 @@ def find_requirement_aetna(df,carrierPlanDetails,carrierTermDates):
     
     return df
 
-def find_requirement_legalShield(df,carrierPlanDetails,carrierTermDates):
-
+def find_requirement_legalShield(df,carrierPlanDetails):
     for index, item in df.iterrows():
         item_ssn = str(item["FULL SSN"])
-        carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
-        carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
-        resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
+        carrierPlanDetails['EE SSN'] = carrierPlanDetails['EE SSN'].astype(str)
+        resultado = carrierPlanDetails[carrierPlanDetails['EE SSN'] == item_ssn]
           
         field='COVERAGE_END_DATE'
         datos=resultado[field].values
@@ -301,7 +288,7 @@ def find_requirement_legalShield(df,carrierPlanDetails,carrierTermDates):
         
         if len(datos_filtrados)==0:
             field='TERMDATE'
-            resultado=carrierTermDates[carrierTermDates['SSN'] == item_ssn]
+            resultado=carrierPlanDetails[carrierPlanDetails['EE SSN'] == item_ssn]
             datos=resultado[field].values
             datos = [
                 f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}"
@@ -317,7 +304,7 @@ def find_requirement_legalShield(df,carrierPlanDetails,carrierTermDates):
     return df
 
 
-def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
+def find_requirement_empire(df,carrierPlanDetails):
     discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
     df.columns = [col.strip() for col in df.columns]
     df['Found Data'] = ''
@@ -339,35 +326,23 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
             if pd.notna(key_word["Data Base"]):
                 df.at[index, 'key word'] = key_word["Data Base"]
                 if len(item_ssn)==9:
-                    if key_word["Data Base"] != "TERMDATE":
-                        
-                        carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
-                        resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
+                    carrierPlanDetails['EE_SSN'] = carrierPlanDetails['EE_SSN'].astype(str)
+                    resultado = carrierPlanDetails[carrierPlanDetails['EE_SSN'] == item_ssn]
+                    if not resultado.empty:
+                        datos = resultado[key_word["Data Base"]].values
+                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                        datos_joined = ';'.join(map(str, datos_filtrados))
+                        df.at[index, 'Found Data'] = datos_joined
+                    else:
+                        resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
                         if not resultado.empty:
                             datos = resultado[key_word["Data Base"]].values
                             datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                             datos_joined = ';'.join(map(str, datos_filtrados))
                             df.at[index, 'Found Data'] = datos_joined
                         else:
-                            resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
-                            if not resultado.empty:
-                                datos = resultado[key_word["Data Base"]].values
-                                datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                                datos_joined = ';'.join(map(str, datos_filtrados))
-                                df.at[index, 'Found Data'] = datos_joined
-                            else:
-                                df.at[index, 'Found Data'] = 'User not found'
-                    else:
-                        carrierTermDates['SSN'] = carrierTermDates['SSN'].astype(str)
-                        resultado = carrierTermDates[carrierTermDates['SSN'] == item_ssn]
-                        if not resultado.empty:
-                            datos = resultado[key_word["Data Base"]].values 
-                            datos = [f"{date.astype('datetime64[D]').item().month}/{date.astype('datetime64[D]').item().day}/{date.astype('datetime64[D]').item().year}" for date in datos]
-                            datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                            datos_joined = ';'.join(map(str, datos_filtrados))
-                            df.at[index, 'Found Data'] = datos_joined
-                        else:
                             df.at[index, 'Found Data'] = 'User not found'
+                   
                 else:
                     df.at[index, 'Found Data'] = 'Invalid SSN' 
             else:
@@ -375,7 +350,7 @@ def find_requirement_empire(df,carrierPlanDetails,carrierTermDates):
                 df.at[index, 'Found Data'] = ''
         else:
             df.at[index, 'Found Data'] = ''
-    
+    print(df)
     return df
   
 
