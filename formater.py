@@ -200,7 +200,7 @@ def remove_leading_zero(ssn):
         if len(ssn) > 9:
             ssn = ssn.lstrip('0')
         elif len(ssn)<9:
-            ssn='0'+ssn
+            ssn=ssn.zfill(9)
     return ssn
 
 
