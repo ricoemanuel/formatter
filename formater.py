@@ -348,7 +348,7 @@ def find_requirement_empire(df,carrierPlanDetails):
                 df.at[index, 'Found Data'] = ''
         else:
             df.at[index, 'Found Data'] = ''
-    df = df[['SSN', 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'Found Data', 'key word']]
+    df = df[['SSN','Instance', 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'Found Data', 'key word']]
     print(df)
     return df
   
