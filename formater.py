@@ -187,19 +187,18 @@ def discrepancies_report(contentBytes, path, planTermDetails):
         ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
         for ssn_column in ssn_columns:
             df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
+        
         df=find_requirement_empire(df,planTermDetails)
         return save_tables_to_excel([df])
 
 def remove_leading_zero(ssn):
-    original_type = type(ssn)
-    if original_type == int:
+    if isinstance(ssn, int):
         ssn = str(ssn)
     if pd.notna(ssn):
         if int(ssn) > 9:
             ssn = ssn.lstrip('0')
-    if original_type == int:
-        ssn = int(ssn)
     return ssn
+
 
 def find_tables_in_excel(df):
     tables = []
