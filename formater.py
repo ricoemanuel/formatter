@@ -188,6 +188,7 @@ def discrepancies_report(contentBytes, path, planTermDetails):
         ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
         for ssn_column in ssn_columns:
             df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
+            planTermDetails['EE_SSN'] = planTermDetails['EE_SSN'].apply(remove_leading_zero)
         
         df=find_requirement_empire(df,planTermDetails)
         return save_tables_to_excel([df])
@@ -196,8 +197,10 @@ def remove_leading_zero(ssn):
     if isinstance(ssn, int):
         ssn = str(ssn)
     if pd.notna(ssn):
-        if int(ssn) > 9:
+        if len(ssn) > 9:
             ssn = ssn.lstrip('0')
+        elif len(ssn)<9:
+            ssn='0'+ssn
     return ssn
 
 
@@ -319,13 +322,10 @@ def find_requirement_empire(df,carrierPlanDetails):
                 found_keywords.append(keyword_row.to_dict())
         found_keywords = {item['Data Base']: item for item in found_keywords}.values()
         found_keywords = list(found_keywords)
-        
         if len(found_keywords) > 0:
             key_word = found_keywords[0]
             item_ssn = str(item["SSN"])
             if pd.notna(key_word["Data Base"]):
-                if '57881285' in item_ssn:
-                    print("found")
                 df.at[index, 'key word'] = key_word["Data Base"]
                 carrierPlanDetails['EE_SSN'] = carrierPlanDetails['EE_SSN'].astype(str)
                
@@ -340,21 +340,19 @@ def find_requirement_empire(df,carrierPlanDetails):
                     datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                     datos_joined = ';'.join(map(str, datos_filtrados))
                     df.at[index, 'Found Data'] = datos_joined
-                    df.at[index, 'Instance'] = resultado["PEO_ID"].values
+                    df.at[index, 'Instance'] = ','.join(resultado["PEO_ID"].unique())
                 else:
 
                     resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
                     if resultado.empty:
                         new_item='0' + item_ssn
                         resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == new_item]
-                    if '57881285' in item_ssn:
-                        print(resultado)
                     if not resultado.empty:
                         datos = resultado[key_word["Data Base"]].values
                         datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
-                        df.at[index, 'Instance'] = resultado["PEO_ID"].values
+                        df.at[index, 'Instance'] = ','.join(resultado["PEO_ID"].unique())
                     else:
                         df.at[index, 'Found Data'] = 'User not found'
                    
