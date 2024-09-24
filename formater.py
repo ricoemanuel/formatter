@@ -303,13 +303,13 @@ def find_requirement_legalShield(df,carrierPlanDetails):
     return df
 
 
-def find_requirement_empire(df, carrierPlanDetails):
+def find_requirement_empire(df,carrierPlanDetails):
     discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
     df.columns = [col.strip() for col in df.columns]
     df['Found Data'] = ''
-    df['key word'] = ''
     
     for index, item in df.iterrows():
+        
         comment = item['HOW TO RESOLVE  (ERROR DESCRIPTION)']
         found_keywords = []
         for _, keyword_row in discrepancies.iterrows():
@@ -320,7 +320,7 @@ def find_requirement_empire(df, carrierPlanDetails):
         found_keywords = list(found_keywords)
         
         if len(found_keywords) > 0:
-            key_word = found_keywords
+            key_word = found_keywords[0]
             item_ssn = str(item["SSN"])
             if pd.notna(key_word["Data Base"]):
                 df.at[index, 'key word'] = key_word["Data Base"]
@@ -340,13 +340,14 @@ def find_requirement_empire(df, carrierPlanDetails):
                         df.at[index, 'Found Data'] = datos_joined
                     else:
                         df.at[index, 'Found Data'] = 'User not found'
+                   
             else:
                 df.at[index, 'key word'] = 'Invalid field'
                 df.at[index, 'Found Data'] = ''
         else:
             df.at[index, 'Found Data'] = ''
-    
-    # Select only the specified columns
     df = df[['SSN', 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'Found Data', 'key word']]
     print(df)
     return df
+  
+
