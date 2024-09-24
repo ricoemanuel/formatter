@@ -40,7 +40,7 @@ def discrepancies():
 
     csv_file = io.StringIO(csv)
 
-    df = pd.read_csv(csv_file)
+    df = pd.read_csv(csv_file,dtype=str)
     processed_content = discrepancies_report(content, path,df)
     
     processed_file = BytesIO(processed_content)

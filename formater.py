@@ -148,6 +148,7 @@ def discrepancies_report_ssn(contentBytes, path):
 def discrepancies_report(contentBytes, path, planTermDetails):
     
     df = ExcelDecoder.decode_content(contentBytes)
+    df = df.astype(str)
     if "aetna" in path.lower():
         dfs = find_tables_in_excel(df)
        
@@ -323,23 +324,37 @@ def find_requirement_empire(df,carrierPlanDetails):
             key_word = found_keywords[0]
             item_ssn = str(item["SSN"])
             if pd.notna(key_word["Data Base"]):
+                if '57881285' in item_ssn:
+                    print("found")
                 df.at[index, 'key word'] = key_word["Data Base"]
                 carrierPlanDetails['EE_SSN'] = carrierPlanDetails['EE_SSN'].astype(str)
+               
                 resultado = carrierPlanDetails[carrierPlanDetails['EE_SSN'] == item_ssn]
+                
+                if resultado.empty:
+                    new_item='0' + item_ssn
+                    resultado = carrierPlanDetails[carrierPlanDetails['EE_SSN'] == new_item]
+                
                 if not resultado.empty:
                     datos = resultado[key_word["Data Base"]].values
                     datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                     datos_joined = ';'.join(map(str, datos_filtrados))
                     df.at[index, 'Found Data'] = datos_joined
-                    df.at[index, 'Instance']=resultado["PEO_ID"].values[0]
+                    df.at[index, 'Instance'] = resultado["PEO_ID"].values
                 else:
+
                     resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
+                    if resultado.empty:
+                        new_item='0' + item_ssn
+                        resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == new_item]
+                    if '57881285' in item_ssn:
+                        print(resultado)
                     if not resultado.empty:
                         datos = resultado[key_word["Data Base"]].values
                         datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
-                        df.at[index, 'Instance']=resultado["PEO_ID"].values[0]
+                        df.at[index, 'Instance'] = resultado["PEO_ID"].values
                     else:
                         df.at[index, 'Found Data'] = 'User not found'
                    
@@ -349,7 +364,6 @@ def find_requirement_empire(df,carrierPlanDetails):
         else:
             df.at[index, 'Found Data'] = ''
     df = df[['SSN','Instance', 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'Found Data', 'key word']]
-    print(df)
     return df
   
 
