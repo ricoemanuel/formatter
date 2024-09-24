@@ -325,26 +325,23 @@ def find_requirement_empire(df,carrierPlanDetails):
             item_ssn = str(item["SSN"])
             if pd.notna(key_word["Data Base"]):
                 df.at[index, 'key word'] = key_word["Data Base"]
-                if len(item_ssn)==9:
-                    carrierPlanDetails['EE_SSN'] = carrierPlanDetails['EE_SSN'].astype(str)
-                    resultado = carrierPlanDetails[carrierPlanDetails['EE_SSN'] == item_ssn]
+                carrierPlanDetails['EE_SSN'] = carrierPlanDetails['EE_SSN'].astype(str)
+                resultado = carrierPlanDetails[carrierPlanDetails['EE_SSN'] == item_ssn]
+                if not resultado.empty:
+                    datos = resultado[key_word["Data Base"]].values
+                    datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+                    datos_joined = ';'.join(map(str, datos_filtrados))
+                    df.at[index, 'Found Data'] = datos_joined
+                else:
+                    resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
                     if not resultado.empty:
                         datos = resultado[key_word["Data Base"]].values
                         datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
                     else:
-                        resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
-                        if not resultado.empty:
-                            datos = resultado[key_word["Data Base"]].values
-                            datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                            datos_joined = ';'.join(map(str, datos_filtrados))
-                            df.at[index, 'Found Data'] = datos_joined
-                        else:
-                            df.at[index, 'Found Data'] = 'User not found'
+                        df.at[index, 'Found Data'] = 'User not found'
                    
-                else:
-                    df.at[index, 'Found Data'] = 'Invalid SSN' 
             else:
                 df.at[index, 'key word'] = 'Invalid field'
                 df.at[index, 'Found Data'] = ''
