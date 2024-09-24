@@ -331,6 +331,7 @@ def find_requirement_empire(df,carrierPlanDetails):
                     datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                     datos_joined = ';'.join(map(str, datos_filtrados))
                     df.at[index, 'Found Data'] = datos_joined
+                    df.at[index, 'Instance']=resultado["PEO_ID"].values[0]
                 else:
                     resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
                     if not resultado.empty:
@@ -338,6 +339,7 @@ def find_requirement_empire(df,carrierPlanDetails):
                         datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
                         datos_joined = ';'.join(map(str, datos_filtrados))
                         df.at[index, 'Found Data'] = datos_joined
+                        df.at[index, 'Instance']=resultado["PEO_ID"].values[0]
                     else:
                         df.at[index, 'Found Data'] = 'User not found'
                    
