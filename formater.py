@@ -293,7 +293,10 @@ def find_requirement(df, carrierPlanDetails, discrepancies_file, comment_column,
         else:
             df.at[index, 'key word'] = 'There is no keywords'
             df.at[index, 'Found Data'] = ''
-    return df[columnsTOKeep]
+    if columnsTOKeep is None:
+        return df
+    else:
+        return df[columnsTOKeep]
 
 def find_keywords(comment, discrepancies):
     found_keywords = []
