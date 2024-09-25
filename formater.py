@@ -175,7 +175,7 @@ def discrepancies_report(contentBytes, path, planTermDetails):
             filtered_df['Carrier'] = 'aetna'
             filtered_df['PEO_ID'] = ''
             combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
-        combined_df=find_requirement_aetna(combined_df,planTermDetails)
+        combined_df=find_requirement(combined_df,planTermDetails,"DISCREPANCIES.xlsx", 'Comments', 'SSN', 'Dep SSN')
         return save_tables_to_excel([combined_df])
 
     elif "legal shield" in path.lower():
@@ -190,7 +190,7 @@ def discrepancies_report(contentBytes, path, planTermDetails):
             df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
             planTermDetails['EE_SSN'] = planTermDetails['EE_SSN'].apply(remove_leading_zero)
         
-        df=find_requirement_empire(df,planTermDetails)
+        df=find_requirement(df, planTermDetails, "DISCREPANCIES.xlsx", 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'SSN',dep_ssn_column='SSN',columnsTOKeep=['SSN','Instance', 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'Found Data', 'key word'])
         return save_tables_to_excel([df])
 
 def remove_leading_zero(ssn):
@@ -228,52 +228,6 @@ def save_tables_to_excel(tables):
     output.seek(0)
     return output.getvalue()
 
-def find_requirement_aetna(df,carrierPlanDetails):
-    discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
-    
-    df['Found Data'] = ''
-    
-    for index, item in df.iterrows():
-        
-        comment = item['Comments']
-        found_keywords = []
-        for _, keyword_row in discrepancies.iterrows():
-            keyword = str(keyword_row['Key word'])
-            if keyword.lower() in comment.lower():
-                found_keywords.append(keyword_row.to_dict())
-        found_keywords = {item['Data Base']: item for item in found_keywords}.values()
-        found_keywords = list(found_keywords)
-        
-        if len(found_keywords) > 0:
-            key_word = found_keywords[0]
-            
-            item_ssn = str(item["SSN"])
-            if pd.notna(key_word["Data Base"]):
-                df.at[index, 'key word'] = key_word["Data Base"]
-                carrierPlanDetails['SSN'] = carrierPlanDetails['SSN'].astype(str)
-                resultado = carrierPlanDetails[carrierPlanDetails['SSN'] == item_ssn]
-                if not resultado.empty:
-                    dep_ssn = str(item["Dep SSN"])
-                    resultadodep = resultado[resultado['DEP_SSN'] == dep_ssn]
-                    if not resultadodep.empty:
-                        datos = resultadodep[key_word["Data Base"]].values
-                        datos = list(set(resultadodep[key_word["Data Base"]].values))
-                    else:
-                        datos = resultado[key_word["Data Base"]].values 
-                    datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                    datos_joined = ';'.join(map(str, datos_filtrados))
-                    df.at[index, 'Found Data'] = datos_joined
-                else:
-                    df.at[index, 'Found Data'] = 'User not found'
-                
-            else:
-                df.at[index, 'key word'] = 'Invalid field'
-                df.at[index, 'Found Data'] = ''
-        else:
-            df.at[index, 'key word'] = 'There is no keywords'
-            df.at[index, 'Found Data'] = ''
-    
-    return df
 
 def find_requirement_legalShield(df,carrierPlanDetails):
     for index, item in df.iterrows():
@@ -307,61 +261,50 @@ def find_requirement_legalShield(df,carrierPlanDetails):
     return df
 
 
-def find_requirement_empire(df,carrierPlanDetails):
-    discrepancies = pd.read_excel("DISCREPANCIES.xlsx")
+def find_requirement(df, carrierPlanDetails, discrepancies_file, comment_column, ssn_column, dep_ssn_column=None, columnsTOKeep=None):
+    discrepancies = pd.read_excel(discrepancies_file)
     df.columns = [col.strip() for col in df.columns]
     df['Found Data'] = ''
     
     for index, item in df.iterrows():
+        comment = item[comment_column]
+        found_keywords = find_keywords(comment, discrepancies)
         
-        comment = item['HOW TO RESOLVE  (ERROR DESCRIPTION)']
-        found_keywords = []
-        for _, keyword_row in discrepancies.iterrows():
-            keyword = str(keyword_row['Key word'])
-            if keyword.lower() in comment.lower():
-                found_keywords.append(keyword_row.to_dict())
-        found_keywords = {item['Data Base']: item for item in found_keywords}.values()
-        found_keywords = list(found_keywords)
-        if len(found_keywords) > 0:
+        if found_keywords:
             key_word = found_keywords[0]
-            item_ssn = str(item["SSN"])
+            item_ssn = item[ssn_column]
             if pd.notna(key_word["Data Base"]):
                 df.at[index, 'key word'] = key_word["Data Base"]
-                carrierPlanDetails['EE_SSN'] = carrierPlanDetails['EE_SSN'].astype(str)
-               
                 resultado = carrierPlanDetails[carrierPlanDetails['EE_SSN'] == item_ssn]
-                
-                if resultado.empty:
-                    new_item='0' + item_ssn
-                    resultado = carrierPlanDetails[carrierPlanDetails['EE_SSN'] == new_item]
-                
                 if not resultado.empty:
-                    datos = resultado[key_word["Data Base"]].values
-                    datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                    datos_joined = ';'.join(map(str, datos_filtrados))
-                    df.at[index, 'Found Data'] = datos_joined
+                    df.at[index, 'Found Data'] = filter_and_join_data(resultado, key_word)
                     df.at[index, 'Instance'] = ','.join(resultado["PEO_ID"].unique())
                 else:
-
-                    resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == item_ssn]
-                    if resultado.empty:
-                        new_item='0' + item_ssn
-                        resultado = carrierPlanDetails[carrierPlanDetails['DEP_SSN'] == new_item]
+                    dep_ssn = item[dep_ssn_column]
+                    resultado = carrierPlanDetails[carrierPlanDetails["DEP_SSN"] == dep_ssn]
                     if not resultado.empty:
-                        datos = resultado[key_word["Data Base"]].values
-                        datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
-                        datos_joined = ';'.join(map(str, datos_filtrados))
-                        df.at[index, 'Found Data'] = datos_joined
+                        df.at[index, 'Found Data'] = filter_and_join_data(resultado, key_word)
                         df.at[index, 'Instance'] = ','.join(resultado["PEO_ID"].unique())
                     else:
                         df.at[index, 'Found Data'] = 'User not found'
-                   
             else:
                 df.at[index, 'key word'] = 'Invalid field'
                 df.at[index, 'Found Data'] = ''
         else:
+            df.at[index, 'key word'] = 'There is no keywords'
             df.at[index, 'Found Data'] = ''
-    df = df[['SSN','Instance', 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'Found Data', 'key word']]
-    return df
-  
+    return df[columnsTOKeep]
 
+def find_keywords(comment, discrepancies):
+    found_keywords = []
+    for _, keyword_row in discrepancies.iterrows():
+        keyword = str(keyword_row['Key word'])
+        if keyword.lower() in comment.lower():
+            found_keywords.append(keyword_row.to_dict())
+    found_keywords = {item['Data Base']: item for item in found_keywords}.values()
+    return list(found_keywords)
+
+def filter_and_join_data(resultado, key_word):
+    datos = resultado[key_word["Data Base"]].values
+    datos_filtrados = list({dato for dato in datos if '/' not in str(dato)} | {dato for dato in datos if '/' in str(dato)})
+    return ';'.join(map(str, datos_filtrados))
