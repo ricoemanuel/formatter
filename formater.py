@@ -99,7 +99,7 @@ def formatFromJson(content):
 def discrepancies_report_ssn(contentBytes, path):
     df = ExcelDecoder.decode_content(contentBytes)
     if "aetna" in path.lower():
-        dfs = find_tables_in_excel(df)
+        dfs = split_dataframe(df)
        
         for df in dfs:
             ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
@@ -146,12 +146,12 @@ def discrepancies_report_ssn(contentBytes, path):
 
     
 def discrepancies_report(contentBytes, path, planTermDetails):
-    
+    planTermDetails['EE_SSN'] = planTermDetails['EE_SSN'].apply(remove_leading_zero)
+    planTermDetails['DEP_SSN'] = planTermDetails['DEP_SSN'].apply(remove_leading_zero)
     df = ExcelDecoder.decode_content(contentBytes)
     df = df.astype(str)
     if "aetna" in path.lower():
-        dfs = find_tables_in_excel(df)
-       
+        dfs = split_dataframe(df)
         for df in dfs:
             ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
             for ssn_column in ssn_columns:
@@ -168,6 +168,7 @@ def discrepancies_report(contentBytes, path, planTermDetails):
         combined_df = pd.DataFrame()
         
         for df in dfs:
+
             filtered_df = df[[col for col in df.columns if col in columns_to_keep]].rename(columns=columns_to_keep)
             if 'EE SSN' in filtered_df.columns and 'SSN' in filtered_df.columns:
                 filtered_df['SSN'] = filtered_df['EE SSN'].combine_first(filtered_df['SSN'])
@@ -175,7 +176,10 @@ def discrepancies_report(contentBytes, path, planTermDetails):
             filtered_df['Carrier'] = 'aetna'
             filtered_df['PEO_ID'] = ''
             combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
+        combined_df['SSN'] = combined_df['SSN'].apply(remove_leading_zero)
+        combined_df['Dep SSN'] = combined_df['Dep SSN'].apply(remove_leading_zero)
         combined_df=find_requirement(combined_df,planTermDetails,"DISCREPANCIES.xlsx", 'Comments', 'SSN', 'Dep SSN')
+        combined_df.to_excel("tests.xlsx")
         return save_tables_to_excel([combined_df])
 
     elif "legal shield" in path.lower():
@@ -188,8 +192,6 @@ def discrepancies_report(contentBytes, path, planTermDetails):
         ssn_columns = [col for col in df.columns if isinstance(col, str) and pd.notna(col) and 'ssn' in col.lower()]
         for ssn_column in ssn_columns:
             df[ssn_column] = df[ssn_column].apply(remove_leading_zero)
-            planTermDetails['EE_SSN'] = planTermDetails['EE_SSN'].apply(remove_leading_zero)
-        
         df=find_requirement(df, planTermDetails, "DISCREPANCIES.xlsx", 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'SSN',dep_ssn_column='SSN',columnsTOKeep=['SSN','Instance', 'HOW TO RESOLVE  (ERROR DESCRIPTION)', 'Found Data', 'key word'])
         return save_tables_to_excel([df])
 
@@ -204,20 +206,35 @@ def remove_leading_zero(ssn):
     return ssn
 
 
-def find_tables_in_excel(df):
-    tables = []
-    table_start = None
-    for i, row in df.iterrows():
-        row_lower = row.str.lower()
-        if any(row_lower.str.contains('csa', na=False)) and (any(row_lower.str.contains('name', na=False)) or any(row_lower.str.contains('ee name', na=False))):
-            table_start = i
-        if table_start is not None and row.isnull().all():
-            table = df.iloc[table_start:i].reset_index(drop=True)
-            table.columns = table.iloc[0]
-            table = table.drop(0).reset_index(drop=True)
-            tables.append(table)
-            table_start = None
-    return tables
+def split_dataframe(df):
+    # Lista para almacenar los DataFrames resultantes
+    dfs = []
+    current_df = []
+    in_block = False
+    dfsReturn=[]
+    for index, row in df.iterrows():
+        csa_present = "CSA" in row.values
+        name_present = any(name in row.values for name in ["Name", "EE Name", "Dep Name"])
+        
+        if csa_present and name_present:
+            if current_df:
+                dfs.append(pd.DataFrame(current_df))
+                current_df = []
+            in_block = True
+
+        if (row == 'nan').all():
+            if current_df:
+                dfs.append(pd.DataFrame(current_df))
+                current_df = []
+            in_block = False
+
+        if in_block:
+            current_df.append(row.values)
+    for df in dfs:
+        new_columns = df.iloc[0]
+        dfsReturn.append(pd.DataFrame(df.iloc[1:].values, columns=new_columns)) 
+    
+    return dfsReturn
 
 def save_tables_to_excel(tables):
     output = BytesIO()
@@ -267,10 +284,12 @@ def find_requirement(df, carrierPlanDetails, discrepancies_file, comment_column,
     df['Found Data'] = ''
     
     for index, item in df.iterrows():
+        
         comment = item[comment_column]
         found_keywords = find_keywords(comment, discrepancies)
         
         if found_keywords:
+           
             key_word = found_keywords[0]
             item_ssn = item[ssn_column]
             if pd.notna(key_word["Data Base"]):
@@ -294,6 +313,7 @@ def find_requirement(df, carrierPlanDetails, discrepancies_file, comment_column,
             df.at[index, 'key word'] = 'There is no keywords'
             df.at[index, 'Found Data'] = ''
     if columnsTOKeep is None:
+        df.to_excel("test.xlsx")
         return df
     else:
         return df[columnsTOKeep]
